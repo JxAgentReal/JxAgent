@@ -1,0 +1,21 @@
+# JxAgent dataset builder (local Windows machine + any build host)
+# The MI300X training stack is installed separately via mi300x/setup.sh.
+#
+# Artifact-affecting packages carry MAJOR-VERSION upper bounds (audit patch
+# 2026-08-16): Pillow changes WebP encoding bytes across majors, PyAV/FFmpeg
+# changes VideoCUA frame decoding, `datasets` could change streaming row
+# order, zstandard frames must keep round-tripping. Transitive deps stay
+# unpinned (no lock-file freeze); the exact resolved versions of every build
+# are recorded in final/environment.json + final/manifest.json.
+datasets>=2.20,<6
+huggingface_hub>=0.24,<2
+pillow>=10.0,<13
+numpy>=1.26,<3
+PyYAML>=6.0,<7
+requests>=2.31,<3
+tqdm>=4.66,<5
+zstandard>=0.22,<1
+av>=12.0,<19          # VideoCUA frame decode (persistent decoder per task)
+
+# development / tests
+pytest>=8.0,<10

@@ -1,0 +1,112 @@
+# JxAgent Run 1 dataset configuration (defaults; CLI flags override)
+targets:
+  procua: 46000   # 2026-08 quality pass
+  gui360: 16000
+  videocua: 17500
+  groundcua: 4000
+  pcagente: 4503
+  replay: 7500
+  total: 95503    # quota; realized ~95.3k after PC-Agent-E quality gate
+
+context_budget: 8192          # maximum multimodal sequence length (estimator)
+per_trajectory_cap: 4         # max training items contributed by one trajectory
+
+sampling:
+  preferred_trajectory_length: [6, 40]
+  short_meaningful_below: 4
+  positive_weight: 2.0
+
+representation:
+  single: 0.55    # 2026-08 audit: best quality per token
+  window: 0.40                # 3-5 actions
+  chunk: 0.05                 # 8-12 actions
+
+reasoning:
+  rate: 0.0       # Run 1 hardening: synthetic reasoning disabled after factuality audit; opt in only after >=99.5% verified
+  max_sentences: 2
+  max_chars: 220
+  categories:
+    recovery: 0.40
+    verification: 0.25
+    planning: 0.20
+    wait: 0.15
+
+images:
+  format: webp
+  gui_lossless: true
+  replay_photo_quality: 80
+  max_long_side: 1600
+  grounding_max_long_side: 1920
+  min_target_px: 11
+  never_upscale: true
+
+dedup:
+  phash_threshold: 6
+  context_aware: true         # keep meaningful repetition (no-state-change, wait, recovery)
+
+split:
+  validation_pct: 3.0
+  method: group_aware_semantic_provenance
+
+selection:
+  enabled: true
+  oversample_factors:
+    procua: 1.50
+    gui360: 1.25
+    videocua: 1.25
+    groundcua: 1.35
+    pcagente: 1.00
+    replay: 1.15
+  max_per_group: {}
+
+loss_token_gate:
+  max_auxiliary_task_share: 0.20
+
+coverage_floors:
+  dialog_modal: 0.004
+  save_export: 0.008
+  file_chooser: 0.001
+  overwrite_confirmation: 0.0003
+  exact_quantity: 0.002
+  sort_rank: 0.002
+  multi_target: 0.003
+  drag: 0.001
+  hotkeys: 0.002
+  scroll_read: 0.003
+  settings: 0.002
+  verified_recovery: 0.0002
+  finish_verification: 0.0005
+  cross_app: 0.0002
+
+decontamination:
+  ngram: 8
+  similarity_threshold: 0.5
+  reference: OSWorld public task instructions
+
+gui360:
+  # documented adjustment: no public failure/recovery cohort exists in
+  # cua-lite/GUI-360; slots are reallocated to grounding + understanding
+  use: all                    # ~10,862 rows
+  grounding_point: 2500   # reduced: functional overlap with GroundCUA
+  understanding: 2650     # answers capped at 24 diverse controls
+
+replay:
+  coding: 1600                # Magicoder-Evol-Instruct-110K (Apache-2.0)
+  math: 1500                  # orca-math-word-problems-200k (MIT)
+  instruction: 1700           # smoltalk smol-magpie-ultra (Apache-2.0)
+  vqa: 1400                   # the_cauldron aokvqa/ai2d (per-subset, CC-BY family)
+  tool: 1300                  # hermes-function-calling-v1 (Apache-2.0)
+
+token_estimate:
+  chars_per_token: 4.0
+  image_patch_px: 28          # Qwen-VL style merged patch
+  image_overhead_tokens: 8
+
+excluded_from_run1:
+  - Click100k
+  - UI Vision
+  - AgentNet
+  - OSWorld trajectories / OSWorld Verified examples
+  - ScreenSpot Pro training
+  - CUA-Gym SFT            # reserved for possible future RLVR under rlvr/
+  - GUI-360 original giant archive

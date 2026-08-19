@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use JxAgent in research, please cite this repository and the upstream datasets/models you use."
+title: "JxAgent: Regression-aware post-training for reliable long-horizon computer use agents"
+type: software
+authors:
+  - family-names: "Pfaff"
+    given-names: "Julius"
+repository-code: "https://github.com/JxAgentReal/JxAgent"
+license: Apache-2.0
+version: 0.1.0-research-preview
+date-released: 2026-08-19

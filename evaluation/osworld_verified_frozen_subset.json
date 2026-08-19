@@ -1,0 +1,7 @@
+{
+ "benchmark": "osworld_verified",
+ "created_utc": "2026-08-16T19:07:24.002217+00:00",
+ "note": "Generate the real subset with make_frozen_subset.py once the canonical task list is pinned and hashed. Consumers must treat this file as NOT READY.",
+ "reason": "canonical Verified task list not yet pinned",
+ "status": "PENDING_VERIFIED_TASK_LIST"
+}

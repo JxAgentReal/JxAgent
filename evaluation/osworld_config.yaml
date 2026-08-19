@@ -1,0 +1,75 @@
+# JxAgent OSWorld evaluation configuration.
+#
+# BASELINE POLICY: the ONLY authoritative baseline is a local untouched-base
+# run through this exact harness. The value under published_reference is a
+# QUOTE with unverified provenance; it must never be used as the comparison
+# anchor and never as a SOTA reference.
+#
+# BENCHMARK IDENTITY: osworld_original and osworld_verified are DIFFERENT
+# benchmarks and are never silently treated as equivalent. Fields whose true
+# value cannot be verified from this repository carry the literal marker
+# REQUIRES_EXTERNAL_VERIFICATION; the harness refuses "Verified"/"SOTA" labels
+# while any Verified protocol field is unresolved.
+
+defaults:
+  scaffold: evaluation/scaffold_config.yaml
+  arms:
+    base:
+      model: ${JXAGENT_MODEL_DIR}
+      adapter: null
+      merge_before_eval: false        # NEVER merge before evaluation
+    adapter:
+      model: ${JXAGENT_MODEL_DIR}        # SAME base revision as the base arm
+      adapter: ${JXAGENT_ADAPTER_PATH}   # LoRA loaded on top, never merged
+      merge_before_eval: false
+
+benchmarks:
+  osworld_original:
+    benchmark_name: osworld_original
+    repository: xlang-ai/OSWorld
+    repository_revision: REQUIRES_EXTERNAL_VERIFICATION   # pin exact commit before real runs
+    task_list_source: .cache/osworld_instructions.json    # 369 cached original instructions
+    task_count: 369
+    task_id_hash: REQUIRES_EXTERNAL_VERIFICATION          # computed when the task list is frozen
+    environment_definition: REQUIRES_EXTERNAL_VERIFICATION  # VM snapshots + app versions
+    step_budget: 50
+    scoring_method: OSWorld per-task config-based scorer; REQUIRES_EXTERNAL_VERIFICATION
+    protocol_notes:
+      - Original 369-task set (chrome/gimp/libreoffice_*/multi_apps/os/thunderbird/vlc/vs_code).
+      - Decontamination reference for training data exists for this set (369 instructions cached).
+
+  osworld_verified:
+    benchmark_name: osworld_verified
+    repository: xlang-ai/OSWorld
+    repository_revision: REQUIRES_EXTERNAL_VERIFICATION   # pin exact commit before real runs
+    task_list_source: REQUIRES_EXTERNAL_VERIFICATION      # canonical Verified task list must be supplied and hashed
+    task_count: REQUIRES_EXTERNAL_VERIFICATION            # published reports mention 439; MUST be pinned locally, not assumed
+    task_id_hash: REQUIRES_EXTERNAL_VERIFICATION
+    environment_definition: REQUIRES_EXTERNAL_VERIFICATION
+    step_budget: REQUIRES_EXTERNAL_VERIFICATION           # must match the official Verified protocol
+    scoring_method: OSWorld per-task config-based scorer; REQUIRES_EXTERNAL_VERIFICATION
+    protocol_notes:
+      - OSWorld-Verified is NOT the same task set as osworld_original; do not
+        transpose scores between identities.
+      - The frozen checkpoint-screening subset lives in
+        evaluation/osworld_verified_frozen_subset.json (currently a PENDING
+        marker; the real subset is generated only after the canonical
+        Verified task list is pinned - see evaluation/make_frozen_subset.py).
+
+frozen_subset:
+  file: evaluation/osworld_verified_frozen_subset.json
+  chosen_before_training: true       # policy; enforced by creation timestamp vs training start
+  target_size: 100
+
+artifacts_to_preserve:
+  - per-task result records
+  - trajectories (steps, screenshots, raw model output, parsed plan/action)
+  - run manifest
+  - config snapshot
+  - exact model revision
+  - adapter revision
+
+published_reference:
+  osworld_verified: 84.3
+  provenance: UNVERIFIED_QUOTE
+  authoritative: false               # a local base run is always required

@@ -1,0 +1,72 @@
+# JxAgent Run 1 training configuration (ms-swift, AMD MI300X)
+model: Qwen/Qwen3.8-27B
+method: lora
+
+lora:
+  rank: 32
+  alpha: 64
+  dropout: 0.0
+  # Trainable modules are selected AFTER inspecting the actual Qwen3.8
+  # architecture (mi300x/inspect_modules.py prints every candidate linear).
+  # Vision encoder, vision-language aligner, embeddings and LM head stay
+  # frozen. If ms-swift 'find_all_linear' proves to select exactly the LM
+  # linears while excluding vision/aligner, it may be used instead.
+  target_modules: single_regex_of_text_decoder_paths
+                 # emitted by mi300x/inspect_modules.py (full-path selection:
+                 # vision/aligner/lm_head/embeddings excluded; text modules
+                 # stay eligible even when the vision tower reuses the same
+                 # leaf names). Consumed as `swift sft --target_modules <regex>`.
+
+optimizer:
+  learning_rate: 1.0e-5
+  scheduler: cosine
+  warmup_ratio: 0.03
+
+train:
+  epochs: 1
+  precision: bf16
+  max_seq_length: 8192
+  packing: false
+  gradient_checkpointing: true
+  per_device_batch_size: 1
+  gradient_accumulation_steps: dynamic   # 32 / (per_device x world_size); computed
+                                         # and PRINTED by mi300x/common.sh so the
+                                         # GLOBAL effective batch stays ~32 on any
+                                         # GPU count (nearest safe value announced
+                                         # if exact 32 is impossible)
+  save_steps: derived                    # save interval = optimizer_steps/5
+  save_total_limit: 999                  # rotation DISABLED during training so a
+                                         # crash can never delete a gate; after the
+                                         # epoch the ~20%/~55%/100% checkpoints are
+                                         # preserved to <output>/gates/{early,middle,final}
+                                         # and other periodic checkpoints are pruned
+  eval: validation loss at every save interval (eval_strategy steps,
+        eval_steps = save interval, per_device_eval_batch_size 1)
+  save_optimizer_state: true             # --save_only_model deliberately NOT set;
+                                         # faithful resume needs optimizer/scheduler/RNG
+  attention_implementation: sdpa         # JXAGENT_ATTN_IMPL; same choice for smoke/
+                                         # throughput/train; verified against the
+                                         # installed ms-swift at runtime
+  train_sample_count: read from final/train.jsonl at run time (never hardcoded)
+
+dataset:
+  train: final/train.jsonl
+  validation: final/validation.jsonl
+  format: ms-swift multimodal
+
+hardware:
+  gpu: AMD MI300X (gfx942)
+  remaining_gpu_hours_budget: 35
+  reserve_hours_for_eval_and_failures: 6
+
+gates:
+  smoke_train: 3 steps, must pass before anything else
+  throughput_test: 100 steps; print estimated epoch time + remaining budget;
+                   ask before launching the full epoch if over budget
+  early_checkpoint_eval: validation loss, action syntax, coordinates,
+                         finish behavior, no style collapse
+  middle_checkpoint_eval: frozen OSWorld Verified subset (chosen BEFORE
+                         training) + regression panel
+  regression_panel:
+    tolerance_absolute_points: 2-3 on major general metrics
+    areas: [math, coding, general VQA, instruction following]

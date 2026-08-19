@@ -1,0 +1,63 @@
+# JxAgent evaluation scaffold — EVERY score-moving variable pinned explicitly.
+# No library defaults are allowed at inference time; the harness reads only
+# this file. Any diff between the base arm and the adapter arm outside the
+# arm_specific_keys list is a hard error (evaluation/scaffold.py).
+#
+# Deterministic-first: greedy decoding (temperature 0) unless a later pinned
+# protocol demonstrably requires sampling; if that ever changes, BOTH arms
+# change together in this file.
+
+agent:
+  system_prompt: "You are a computer-use agent."
+  action_space: [click, double_click, right_click, middle_click, move, drag,
+                 scroll, type, press, hotkey, key_down, key_up, mouse_down,
+                 mouse_up, wait, finish]
+  coordinate_space: absolute_pixels_in_processed_observation
+  history_rendering: text_bullet_list_of_rendered_actions
+  user_template: "Task: {instruction}\nPrevious actions:\n{history}"
+
+sampling:
+  temperature: 0.0
+  top_p: 1.0
+  top_k: 0            # 0 = disabled (greedy)
+  max_new_tokens: 512
+  seed: 1337
+  seed_policy: fixed_seed_for_all_arms_and_tasks
+
+observation:
+  source_resolution: environment_native
+  resize_max_long_side: 1600
+  never_upscale: true
+  preserve_aspect: true
+  interpolation: LANCZOS
+  color_mode: RGB
+  format: raw_rgb_pixels   # no re-encoding before the processor
+
+history:
+  limit: 30                       # last N rendered actions kept in prompt
+  truncation_strategy: keep_last  # drop oldest beyond the limit
+  include_step_numbers: false
+
+execution:
+  step_budget: 50
+  action_timeout_s: 15
+  model_timeout_s: 180
+  retry_count: 1                  # retries on harness/infra errors only
+  retry_backoff_s: 2.0
+  screenshot_settle_delay_s: 1.5
+
+finish_behavior:
+  required_to_score_success: true # task counts as success only after finish
+  accept_without_status: true     # bare finish() accepted
+  premature_finish_scores_failure: true
+
+failure_accounting:
+  harness_and_environment_errors_count_as_failure_in_strict_rate: true
+  protocol_rate_excludes: [invalid_task, environment_failure, harness_failure]
+
+# Keys that legitimately differ between the base arm and the adapter arm.
+arm_specific_keys:
+  - runs.model
+  - runs.adapter
+  - runs.checkpoint
+  - runs.merge_before_eval

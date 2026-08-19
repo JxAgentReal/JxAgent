@@ -1,0 +1,54 @@
+# General regression panel: the adapter must not gain OSWorld by destroying
+# the base model's general capabilities. Same scaffold discipline as the
+# OSWorld arms: identical prompts, sampling, preprocessing for base and
+# adapter; adapter loaded on top of the same base, never merged.
+#
+# Small and cheap by design: detect MEANINGFUL regressions, not rank models.
+#
+# Math panel note (deliberate): training replay includes orca-math, which is
+# GSM-style synthetic data. gsm8k results are therefore OVERLAP-EXPOSED and
+# labeled as such; the independent math signal comes from the MATH subset.
+#
+# Tool-use panel exists because training includes hermes function-calling.
+
+tolerance:
+  investigation_points: 3      # >= 3 pp absolute regression on a major metric => investigate
+  hard_stop_points: 5          # >= 5 pp absolute regression => hard stop
+  noise_floor_points: 2        # deltas below this on n<=500 panels are noise; do not react
+
+panels:
+  instruction_following:
+    provider: lm-eval-harness
+    tasks: [ifeval]
+    samples: 300
+  coding:
+    provider: lm-eval-harness
+    tasks: [mbpp_subset, humaneval_subset]
+    samples: 200
+  math:
+    provider: lm-eval-harness
+    tasks: [math_subset_must_be_non_gsm]     # e.g. MATH 500 / competition subset
+    overlap_exposed_tasks: [gsm8k]           # orca-math is GSM-style; label, don't anchor
+    samples: 400
+  general_vqa:
+    provider: lm-eval-harness-multimodal
+    tasks: [mmbench_subset, textvqa_subset]
+    samples: 300
+  tool_use:
+    provider: lm-eval-harness-style          # berkeley-function-calling single-turn subset
+    tasks: [bfcl_single_turn_subset]
+    samples: 200
+
+comparison:
+  models:
+    base: Qwen/Qwen3.8-27B
+    adapter: ${JXAGENT_ADAPTER_PATH}   # LoRA on top of the same base, never merged
+  identical:
+    - prompt templates
+    - sampling (greedy unless the benchmark protocol requires otherwise)
+    - max tokens
+    - image preprocessing
+  paired: true                      # same sample ids for both arms
+  requires_local_base_run: true     # same baseline-first rule as OSWorld arms
+
+report: evaluation/regression_report.json

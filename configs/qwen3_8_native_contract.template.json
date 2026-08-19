@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "model_id": "Qwen/Qwen3.8-27B",
+  "adapter": {
+    "family": "jxagent_text_action_v1"
+  },
+  "coordinate_space": {
+    "type": "REPLACE_FROM_OFFICIAL_INTERFACE"
+  },
+  "message_layout": {
+    "system_prompt": "REPLACE_FROM_OFFICIAL_INTERFACE",
+    "image_placeholder": "REPLACE_FROM_OFFICIAL_INTERFACE",
+    "assistant_action_template": "REPLACE_FROM_OFFICIAL_INTERFACE_WITH_{action}",
+    "text_user_template": "REPLACE_FROM_OFFICIAL_INTERFACE_WITH_{image}_{task}_{history}",
+    "history_item_template": "REPLACE_FROM_OFFICIAL_INTERFACE_WITH_{action}",
+    "visual_user_with_task_template": "REPLACE_FROM_OFFICIAL_INTERFACE_WITH_{image}_{task}",
+    "visual_user_without_task_template": "REPLACE_FROM_OFFICIAL_INTERFACE_WITH_{image}",
+    "older_history_template": "REPLACE_FROM_OFFICIAL_INTERFACE_WITH_{history}"
+  },
+  "history_policy": {
+    "mode": "REPLACE_FROM_OFFICIAL_INTERFACE",
+    "recent_visual_rounds": 0,
+    "task_location": "REPLACE_FROM_OFFICIAL_INTERFACE",
+    "older_actions": "omit",
+    "older_summary_location": "REPLACE_FROM_OFFICIAL_INTERFACE_IF_USED"
+  },
+  "source_evidence": [
+    {
+      "path": "REPLACE_WITH_LOCAL_OFFICIAL_INTERFACE_FILE",
+      "sha256": "REPLACE_WITH_SHA256",
+      "kind": "official_qwen_interface"
+    }
+  ]
+}
